@@ -1,0 +1,35 @@
+K1D8,Redfield Municipal Airport,44.85657,-98.53123,1309 
+K60R,Navasota Municipal Airport,30.36714,-96.11294,229
+KACZ,Henderson Field Airport,34.71786,-78.00389,38
+KCHD,Chandler, Chandler Municipal Airport,33.26917,-111.81111,1243
+KCPP,Greene County Regional Airport,33.59797,-83.13826,689
+KE77,San Manuel Airport,32.63644,-110.64729,3272
+KHVC,Hopkinsville-Christian County Airport,36.85697,-87.45508,564
+KI95,Hardin County Airport,40.61009,-83.64426,1029
+KLMS,Louisville/Winston County Airport,33.14599,-89.06245,575
+KMCZ,Martin County Airport,35.86219,-77.17820,75
+KMTK,South Pass 89E,28.70000,-89.40000,164
+KN79,North Cumberland County Airport,40.83692,-76.55244,881
+K1CN,Ruso,47.71512,-101.009,599                           
+K1DN,Max,47.79468,-101.298,634                           
+K1EN,Ryder,47.75053,-101.674,646                         
+K1GN,Plaza,48.12013,-101.96,649                        
+K1HN,Parshall,47.97474,-102.222,579                      
+K1IN,Palermo, 48.34578,-102.304681,681                      
+K1JN,Donnybrook,48.41174,-101.891,672                  
+K1KN,Donnybrook 2,48.55139,-102.121,693                   
+K1MN,Kenmare,48.67321,-101.881,570                       
+K1ON,Antler,48.82417,-101.284,467                       
+KACZ,Henderson Field AP,34.71786,-78.00389,12
+KLMS,LOUISVILLE/WNSTN,33.16,-89.07,175           
+KMCZ,Martin Cnty Airport,35.86219,-77.1782,23
+KS12,Albany Muni Airport,44.63782,-123.05945,69
+CWGB,Ballenas Is,49.35,-124.17,5           
+CWHL,Holland Rock,54.17,-130.37,5            
+CWJR,Creston,49.09,-116.50,646                
+CWLM,Victoria,48.42,-123.32,70               
+CWNM,Nelson,49.51,-117.30,535                
+CWPR,Princeton,49.47,-120.52,700               
+CWSK,Squamish,49.78,-123.17,52              
+CWWA,West Vancouver,49.33,-123.18,178          
+ 
