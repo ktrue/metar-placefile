@@ -109,4 +109,4 @@ permitted redistribution instructions.
 
 ## Sample screen capture
 
-(tbd)
+![sample-output](https://github.com/ktrue/metar-placefile/assets/17507343/4fbe3e21-72e1-40b1-80a3-1a9a235e3a62)
