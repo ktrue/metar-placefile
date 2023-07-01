@@ -61,14 +61,19 @@ Additional documentation is in each script for further modification convenience.
 
 ## Installation
 
-Put the following files in a directory under the document root of your website.  (We used 'placefiles' in the examples below)
+Change the `date_default_timezone_set('America/Los_Angeles');` to your timezone in
+*metar-placefile.php*, and *get-metar-metadata.php*; 
+and `$ourTZ = 'America/Los_Angeles';` in *get-aviation-metars.php*
+to your timezone if needed.
 
-  *get-metar-metadata.php*
-  *get-aviation-metars.php*
-  *metar-placefile.php*
-  *metar-cond-iconcodes-inc.php*
-  *cloudcover_new.png*
-  *windbarbs_75_new.png*
+Upload the following files in a directory under the document root of your website.  (We used 'placefiles' in the examples below)
+
+- *get-metar-metadata.php*
+- *get-aviation-metars.php*
+- *metar-placefile.php*
+- *metar-cond-iconcodes-inc.php*
+- *cloudcover_new.png*
+- *windbarbs_75_new.png*
   
 Set up cron to run *get-metar-metadata.php* like:
 ```
