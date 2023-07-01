@@ -93,7 +93,7 @@ Then you can test the metar-placefile script by using your browser to go to
 If that returns a placefile, then add your placefile URL into the GRLevelX placefile
 manager window
 
-## Acknowledgement
+## Acknowledgements
 
 Special thanks to Mike Davis, W1ARN of the National Weather Service, Nashville TN office
 for the *windbarbs_75_new.png* and *cloudcover_new.png* icon sheets,
@@ -102,3 +102,11 @@ preliminary placefile output example,
 and for his testing/feedback during development.   
 
 
+Some code in *get-aviation-metars.php* and *metar-cond-iconcodes-inc.php* are
+adapted from https://github.com/pear/Services_Weather/blob/trunk/Weather/Common.php
+by Alexander Wirtz with Copyright (c) 2005-2011 and is used under the
+permitted redistribution instructions. 
+
+## Sample screen capture
+
+(tbd)
