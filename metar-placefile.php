@@ -14,7 +14,7 @@ Author: Ken True - webmaster@saratoga-weather.org
 
 Acknowledgement:
   
-   Special hanks to Mike Davis, W1ARN of the National Weather Service, Nashville TN office
+   Special thanks to Mike Davis, W1ARN of the National Weather Service, Nashville TN office
    for the windbarbs_75_new.png and cloudcover_new.png icon sheets,
 	 the METAR weather conditions to icon code mapping, 
 	 preliminary placefile output example, 
