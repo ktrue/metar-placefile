@@ -10,6 +10,7 @@
 
 Version 1.00 - 30-Jun-2023 - initial release
 Version 1.01 - 01-Jul-2023 - added 'OVX' for Vertical Visibility
+Version 1.02 - 03-Jul-2023 - added SA, DU, SS, DS for Sand/Dust
 
 */
 // self downloader
@@ -204,13 +205,37 @@ static $condIcons = array(
 	'FG' => 38,
 	
 	#   Haze/Smoke/Dust/Volcano
-	'BLSA' => 64, # 'Blowing Sand'
-	'SS' => 64, # 'Sandstorm/Duststorm'
+	'-BLSA' => 70, // Light Blowing Sand in air 
+	'+BLSA' => 70, // Heavy Blowing Sand in air 
+	'BLSA' => 70, // Moderate Blowing Sand in air 
+	'-DRSA' => 70, // Light Drifting Sand in air 
+	'+DRSA' => 70, // Heavy Drifting Sand in air 
+	'DRSA' => 70, // Moderate Drifting Sand in air 
+	'-SA' => 70, // Light Sand in air 
+	'+SA' => 70, // Heavy Sand in air 
+	'SA' => 70, // Moderate Sand in air 
+	
+	'-BLDU' => 69, // Light Blowing Dust in air 
+	'+BLDU' => 69, // Heavy Blowing Dust in air 
+	'BLDU' => 69, // Moderate Blowing Dust in air 
+	'-DRDU' => 69, // Light Drifting Dust in air 
+	'+DRDU' => 69, // Heavy Drifting Dust in air 
+	'DRDU' => 69, // Moderate Drifting Dust in air 
+	'-DU' => 69, // Light Dust in air 
+	'+DU' => 69, // Heavy Dust in air 
+	'DU' => 69, // Moderate Dust in air 
+	
+	'-SS' => 72, // Light Sandstorm 
+	'+SS' => 72, // Heavy Sandstorm 
+	'SS' => 72, // Moderate Sandstorm 
+	
+	'-DS' => 71, // Light Duststorm 
+	'+DS' => 71, // Heavy Duststorm 
+	'DS' => 71, // Moderate Duststorm 
+
 	'FU' => 35,
 	'HZ' => 36,
 	'VA' => 66,
-	'DU' => 64, # 'Widespread Dust',
-	'SA' => 64, # 'Sand',
 	'PY' => 61, # 'Spray',
 	'PO' => 42, # 'Well-developed Dust/Sand Whirls',
 	'UP' => 43,

@@ -22,6 +22,7 @@ ini_set('display_errors','1');
 // version 1.01 - 28-Jun-2023 - added cloud code to $M['codes'] if no other weather codes specified 
 // Version 1.02 - 29-Jun-2023 - added patch for winddir out of range 0..360
 // Version 1.03 - 01-Jul-2023 - added reporting for missing iconcodes
+// Version 1.04 - 03-Jul-2023 - added CSV error checking
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $ourTZ = 'America/Los_Angeles';
@@ -29,7 +30,7 @@ ini_set('display_errors','1');
 // -------------End Settings -----------------------------
 //
 
-$GMLversion = 'get-aviation-metars.php V1.03 - 01-Jul-2023';
+$GMLversion = 'get-aviation-metars.php V1.04 - 03-Jul-2023';
 $NOAA_URL = 'https://www.aviationweather.gov/adds/dataserver_current/current/metars.cache.csv'; // new location 15-June-2016
 //
 $NOAAcacheName = $cacheFileDir."aviationweather-current.csv";
@@ -100,15 +101,15 @@ if(strlen($rawHTML) < 2000 ){
 foreach ($recs as $i => $rec) {
 	if(strlen($rec) < 100) {continue;}
 	if(substr($rec,0,1) == '"') {
-		$Debug .= "<!-- rec $i is quoted for ".substr($rec,0,10)."... reprocessing -->\n";
 		$vals = str_getcsv($rec); 
+		$Debug .= "<!-- rec $i has embedded commas for '".$vals[0]."'... reprocessing -->\n";
 		$vals[0] = str_replace(',','',$vals[0]); # remove commas in raw metar.
 		$rec = join(',',$vals);
-		$Debug .= "<!-- rec $i has embedded commas removed for ".substr($rec,0,4)." METAR. -->\n";
 	}
 	if(substr($rec,0,8) == 'raw_text') {continue;}
 	$metar = substr($rec,0,4);
-	$metars[$metar] = gen_data($metar,trim($rec));
+	$tM = gen_data($metar,trim($rec));
+	if(count($tM) > 0) {$metars[$metar] = gen_data($metar,trim($rec));}
 }
 
 ksort($metars);
@@ -128,7 +129,7 @@ if(count($missingLLE) > 0) {
  $Debug .= "<!-- \n.. ".count($missingLLE)." METARs are reporting w/o metadata available. -->\n";
 }
 if(count($wxCodesMissing) > 0) {
-	$Debug .= "<!-- ".count($wxCodesMissing)." wx codes missing from metar-cond-iconcodes-inc.php lookup -->\n";
+	$Debug .= "<!-- \n.. ".count($wxCodesMissing)." wx codes missing from metar-cond-iconcodes-inc.php lookup -->\n";
 	ksort($wxCodesMissing);
 	foreach ($wxCodesMissing as $icao => $data) {
 		$Debug .= "<!--  $icao '$data' -->\n";
@@ -137,7 +138,7 @@ if(count($wxCodesMissing) > 0) {
 	
 if(count($wxCodesSeen) > 0) {
 	ksort($wxCodesSeen);
-	$Debug .= "<!-- wx codes seen\n".var_export($wxCodesSeen,true)."\n -->\n";
+	$Debug .= "<!-- \nwx codes seen\n".var_export($wxCodesSeen,true)."\n -->\n";
 }
 
 $Debug = preg_replace('|<!--|is','',$Debug);
@@ -227,7 +228,10 @@ offset	data	Convert	Key	sample
 */
 	$M = array();
 	$V = explode(',',$data); // split up CSV record
-	
+	if(count($V) != 44) {
+		$Debug .= "<!-- malformed record '".$V[0]."' with ".count($V)." fields rejected. -->\n";
+		return($M);
+	}
 	$M['RAW-METAR'] = $V[0];
 	$M['FIX-METAR'] = $V[0];
 	$M['STATION']   = $icao;
