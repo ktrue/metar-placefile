@@ -23,15 +23,19 @@ Acknowledgement:
 Version 1.00 - 21-Jun-2023 - initial release
 Version 1.01 - 29-Jun-2023 - update for condition/sky icon choosing based on $M['codes']
 Version 1.02 - 01-Jul-2023 - added icon decode for hail (PL,GR,GS) and snow grains (SG) and metar-cond-iconcodes-inc.php
+Version 1.03 - 08-Jul-2023 - switch to using knots for determining wind barb, added gust barb
+Version 1.04 - 10-Jul-2023 - display separate gust barb w/value, alert img for heat-index, high wind and low visibility
+Version 1.05 - 10-Jul-2023 - add precip (if present) to popup
+Version 1.06 - 11-Jul-2023 - added icon display formats per Mike Davis, added wind-chill display
 */
 #---------------------------------------------------------------------------
 
 #-----------settings--------------------------------------------------------
-date_default_timezone_set('America/Los_Angeles');
+date_default_timezone_set('UTC');
 $timeFormat = "d-M-Y g:ia T";  // time display for date() in popup
 #-----------end of settings-------------------------------------------------
 
-$Version = "metar-placefile.php V1.01 - 01-Jul-2023 - webmaster@saratoga-weather.org";
+$Version = "metar-placefile.php V1.06 - 11-Jul-2023 - webmaster@saratoga-weather.org";
 global $Version,$timeFormat;
 
 // self downloader
@@ -96,7 +100,6 @@ if(!isset($latitude) or !isset($longitude) or !isset($version)) {
 	exit();
 }
 
-
 /*
 Sample entry annotated:
 
@@ -153,6 +156,8 @@ The following MAY be present if conditions warrant it:
 
     'WINDCHILL' => '22F (-6C)',
     'dwindch' => 22,
+		
+		'PRECIP'  => '0.05 in',
 
 the 'd...' entries are all numeric w/o units , but use F,mph. Both altimeter readings in inHg and hPa are available
 
@@ -183,10 +188,14 @@ function gen_header() {
 ;
 Title: '.$title.' - '.gmdate('r').' 
 Refresh: 7
-Color: 200 200 255
+Color: 255 255 255
 Font: 1, 12, 1, Arial
-IconFile: 1, 43, 68, 29, 67, windbarbs_75_new.png
+;IconFile: 1, 43, 68, 29, 67, windbarbs_75_new.png
+;IconFile: 1, 18, 58, 2, 58, windbarbs_kt.png
+IconFile: 1, 19, 43, 2, 43, windbarbs-kt-white.png
 IconFile: 2, 15, 15, 8, 8, cloudcover_new.png
+IconFile: 3, 19, 43, 2, 43, windbarbs-kt-red.png
+IconFile: 4, 19, 43, 9, 43, windbarbs-kt-gust.png
 Threshold: 999
 
 ';
@@ -205,25 +214,78 @@ function gen_entry($M,$miles,$bearingWR) {
 	
   $output = 'Object: '.$M['LATITUDE'].','.$M['LONGITUDE']. "\n";
   $output .= "Threshold: 999\n";
-	$barbno = pick_wind_icon($M['dwind']);
-	if($barbno > 0) {
-    $output .= "Icon: 0,0,".$M['dwinddir'].",1,".$barbno."\n";
-	}
-	$icon = pick_cond_icon($M['codes']);
-	if($icon < 0) {$icon = 40; } # show missing icon if not found
-  $output .= "Icon: 0,0,000,2,$icon,\"".gen_popup($M)."\"\n";
   #$output .= "Color: 18 87 87\n";
   $output .= "Text: -17, 13, 1, ".$M['dtemp']."\n";
   #$output .= "Color: 0 153 150\n";
   $output .= "Text: -17, -13, 1, ".$M['ddewpt']."\n";
   #$output .= "Color: 24 189 7\n";
 	if(isset($M['dvis'])) {
-    $output .= "Text: -27, 0, 1, ".$M['dvis']."\n";
+		$tVis = ($M['dvis'] >= 2.0)?intval($M['dvis']):$M['dvis'];
+    $output .= "Text: 17, -13, 1, ".$tVis."\n";
+		if($tVis >= 1 && $tVis < 3) {
+		$output .= "Color: 247 11 15\n";  
+		$output .= "Text: 17, -13, 1, ".$tVis."\n";
+		}
+		if($tVis >= 3 && $tVis <= 5) {
+		$output .= "Color: 255 255 0\n";  
+		$output .= "Text: 17, -13, 1, ".$tVis."\n";
+		}
+			if($tVis > 5) {
+		$output .= "Color: 24 189 7\n";  
+		$output .= "Text: 17, -13, 1, ".$tVis."\n";
+		}
+			if($tVis == 0) {
+		$output .= "Color: 250 0 248\n";  
+		$output .= "Text: 17, -13, 1, ".$tVis."\n";
+		}
+	$output .= "Color: 255 255 255\n";
 	}
   #$output .= "Color: 24 189 7\n";
-  $output .= "Text: 17, 13, 1, ".round($M['dalthpa'],0)."\n";
+	if($M['dalthpa'] > 500) {
+    $output .= "Text: 28, 13, 1, ".round($M['dalthpa'],0)."\n";
+	}
+
   #$output .= "Color: 24 189 7\n";
-  $output .= "Text: 17, -13, 1, ".$M['STATION']."\n";
+  #$output .= "Text: 17, -13, 1, ".$M['STATION']."\n";
+	$barbno = pick_wind_icon($M['dwindkts']);
+//*
+	$barbgust = isset($M['dwindgust'])?pick_gust_icon($M['dwindgust']):0;
+	if($barbgust > 0) {
+		$tDir = intval(($M['dwinddir']+180) % 360);
+		$output .= "Icon: 0,0,".$tDir.",4,".$barbgust."\n";
+		list($tX,$tY) = pick_gust_offsets($tDir,50);
+		$output .= "Text: $tX, $tY, 1, ".$M['dwindgust']."\n";
+	}
+//*/
+	if($barbno > 0) {
+    $output .= "Icon: 0,0,".$M['dwinddir'].",1,".$barbno."\n";
+	}
+	$icon = pick_cond_icon($M['codes']);
+	if($icon < 0) {$icon = 40; } # show missing icon if not found
+	# high wind speed overrides
+	if($M['dwind'] >= 58) {
+		$icon=52;
+
+	} elseif ($M['dwind'] >= 35) {
+		$icon=51;
+	}
+	# overrides for alert issues:
+	if((isset($M['dvis']) and $M['dvis'] <= 1.0) or 
+	   (isset($M['dheatidx']) and $M['dheatidx'] >= 105) or
+		 ($M['dwind'] >= 35) ) {
+			 $icon =64; # alert icon
+		 }
+	if(isset($M['dheatidx'])) {
+	  $output .= "Color: 252 78 42\n";
+		$output .= "Text: -30, 0, 1, ".$M['dheatidx']."\n";
+    $output .= "Color: 255 255 255\n";
+	}
+	if(isset($M['dwindch'])) {
+	  $output .= "Color: 2 145 255\n";
+		$output .= "Text: -30, 0, 1, ".$M['dwindch']."\n";
+    $output .= "Color: 255 255 255\n";
+	}
+  $output .= "Icon: 0,0,000,2,$icon,\"".gen_popup($M)."\"\n";
   $output .= "End:\n\n";
 
   print $output;	
@@ -236,6 +298,7 @@ function pick_wind_icon($speed) {
 	# as a guide.for windbarbs_75_new.png image
 	
 	static $barbs = array(2,8,14,20,25,31,37,43,60,66,71,77,83,89,94,100,112,117/*,123*/); #in MPH
+	static $barbs = array(2,7,12,17,22,27,32,37,52,47,52,57,62,67,77,82,87,92,97,102); # in KTS
 	if($speed > 117) {return(17);}
 	for ($i=0;$i<count($barbs);$i++){
 	  if($speed <= $barbs[$i]) {break;}
@@ -247,35 +310,78 @@ function pick_wind_icon($speed) {
 }
 #---------------------------------------------------------------------------
 
+function pick_gust_icon($speed) {
+	# return icon number based on gust speed
+	# as a guide.for winbarbs-kt-gust.png image
+	
+	#static $barbs = array(2,8,14,20,25,31,37,43,60,66,71,77,83,89,94,100,112,117/*,123*/); #in MPH
+	static $barbs = array(2,20,60,77,180); #in MPH
+	#static $barbs = array(2,7,12,17,22,27,32,37,52,47,52,57,62,67,77,82,87,92,97,102); # in KTS
+	if($speed > 180) {return(4);}
+	for ($i=0;$i<count($barbs);$i++){
+	  if($speed <= $barbs[$i]) {break;}
+  }
+
+	if($i > 4) {$i = 4; }
+	return($i);
+	
+}
+
+#---------------------------------------------------------------------------
+function pick_gust_offsets ($angle,$radius) {
+	# pick the offset x, y to place the gust value at the end of the arrow
+	
+	$theta = $angle*pi()/180;
+	$y = intval(cos($theta)*$radius);
+	$x = intval(sin($theta)*$radius);
+  return(array($x,$y));
+}
+#---------------------------------------------------------------------------
+
 function gen_popup($M) {
 	global $timeFormat;
 	# note use '\n' to end each line so GRLevelX will do a new-line in the popup.
 	
-	$out = $M['NAME']." (".$M['LATITUDE'].",".$M['LONGITUDE']." elev ".$M['ELEVATION'].' ft)\n';
+	$out = $M['NAME'].'\n   ('.$M['LATITUDE'].",".$M['LONGITUDE']." @ ".$M['ELEVATION'].' ft)\n';
 	$out .= "----------------------------------------------------------".'\n';
 	$out .= $M['RAW-METAR'].'\n';
 	$out .= "----------------------------------------------------------".'\n';
 	$obsTime = strtotime($M['OBSTIME']);
-	$out .= "OBStime: ".date($timeFormat,$obsTime)." (".gmdate('H:i',$obsTime).'Z)\n';
-	$out .= "Temp: ".$M['TEMPERATURE'].'\n';
-	$out .= "DewPt: ".$M['DEWPT'].'\n';
-	$out .= "Humid: ".$M['HUMIDITY'].'\n';
-	if(isset($M['HEATINDEX'])) {
-		$out .="HeatIdx: ".$M['HEATINDEX'].'\n';
-	}
-	if(isset($M['WINDCHILL'])) {
-		$out .="WindCh: ".$M['WINDCHILL'].'\n';
+	$out .= "Time: ".date($timeFormat,$obsTime)." (".gmdate('H:i',$obsTime).'Z)\n';
+	$out .= "T:    ".$M['TEMPERATURE'].'\n';
+	$out .= "Td:   ".$M['DEWPT'].'\n';
+	$out .= "RH:   ".$M['HUMIDITY'].'\n';
+	
+	if(strpos($M['WIND'],',') !== false) {
+		$M['WIND'] = str_replace("gusting",'\n        gusting',$M['WIND']);
 	}
 	$out .= "Wind: ".$M['WIND'].'\n';
 	if(isset($M['VISIBILITY'])) {
-		$out .= "Visib: ".$M['VISIBILITY'].'\n';
+		$out .= "Vsby: " .$M['VISIBILITY'].'\n';
+	}
+	if(isset($M['PRECIP'])) {
+		$out .= 'Prcp: '.$M['PRECIP'].'\n';
+	}
+	if(isset($M['SNOW'])) {
+		$out .= 'Snow:   '.$M['SNOW'].'\n';
 	}
 	$out .= "Cond: ".$M['CONDITIONS'].'\n';
-	$sky = str_replace("\t",',\n     ',$M['CLOUD-DETAILS']);
-	if(strlen($sky) > 2) {$sky = substr($sky,0,strlen($sky)-8); }
-	$out .= "Sky: ".$sky.'\n';
-	$out .= "Altim: ".$M['BAROMETER'].'\n';
-	$out .= "WXcodes: ".$M['codes'].'\n';
+	if(strlen($M['CLOUD-DETAILS']) > 4) {
+	  $sky = str_replace("\t",',\n        ',$M['CLOUD-DETAILS']);
+	  $out .= "Sky:  ".$sky.'\n';
+	}
+	if($M['dalthpa'] > 500) {
+	  $out .= "Pres: ".$M['BAROMETER'].'\n';
+	} else {
+	  $out .= "Pres: n/a".'\n';
+	}
+	$out .= "WX:   ".$M['codes'].'\n';
+	if(isset($M['HEATINDEX'])) {
+		$out .="Heat Index: ".$M['HEATINDEX'].'\n';
+	}
+	if(isset($M['WINDCHILL'])) {
+		$out .="Wind Chill: ".$M['WINDCHILL'].'\n';
+	}
 # last line of popup
 	$out .= "----------------------------------------------------------";
 	$out = str_replace('"',"'",$out);

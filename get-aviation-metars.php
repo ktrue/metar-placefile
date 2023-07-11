@@ -23,6 +23,8 @@ ini_set('display_errors','1');
 // Version 1.02 - 29-Jun-2023 - added patch for winddir out of range 0..360
 // Version 1.03 - 01-Jul-2023 - added reporting for missing iconcodes
 // Version 1.04 - 03-Jul-2023 - added CSV error checking
+// Version 1.05 - 08-Jul-2023 - added $M['windkts'], $M['windgustkts'] and text wind info in knots
+// Version 1.06 - 10-Jul-2023 - added precip data $M['PRECIP']
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $ourTZ = 'America/Los_Angeles';
@@ -30,7 +32,7 @@ ini_set('display_errors','1');
 // -------------End Settings -----------------------------
 //
 
-$GMLversion = 'get-aviation-metars.php V1.04 - 03-Jul-2023';
+$GMLversion = 'get-aviation-metars.php V1.06 - 10-Jul-2023';
 $NOAA_URL = 'https://www.aviationweather.gov/adds/dataserver_current/current/metars.cache.csv'; // new location 15-June-2016
 //
 $NOAAcacheName = $cacheFileDir."aviationweather-current.csv";
@@ -109,7 +111,7 @@ foreach ($recs as $i => $rec) {
 	if(substr($rec,0,8) == 'raw_text') {continue;}
 	$metar = substr($rec,0,4);
 	$tM = gen_data($metar,trim($rec));
-	if(count($tM) > 0) {$metars[$metar] = gen_data($metar,trim($rec));}
+	if(count($tM) > 0) {$metars[$metar] = $tM;}
 }
 
 ksort($metars);
@@ -223,6 +225,19 @@ offset	data	Convert	Key	sample
 29	cloud_base_ft_agl			
 		constructed	CLOUDS	Mostly Cloudy
 		constructed	CLOUD-DETAILS	Partly Cloudy 1700 ft, Mostly Cloudy 10000 ft, Mostly Cloudy 12000 ft
+30	flight_category			VFR
+31	three_hr_pressure_tendency_mb			
+32	maxT_c			
+33	minT_c			
+34	maxT24hr_c			
+35	minT24hr_c			
+36	precip_in			0.005
+37	pcp3hr_in			
+38	pcp6hr_in			
+39	pcp24hr_in			
+40	snow_in			
+41	vert_vis_ft			
+42	metar_type			METAR
 43	elevation_m	meter2feet	ELEVATION	4
 
 */
@@ -273,12 +288,14 @@ offset	data	Convert	Key	sample
 		$direction       = 'n/a';
 	}
 	$M['dwind']      = intval(round(convertSpeed((float)$V[8],'kt','mph'),0));
+	$M['dwindkts']   = (integer)$V[8];
 	$windkmh         = intval(round(convertSpeed((float)$V[8],'kt','kmh'),0));
-	$M['WIND']       = $direction." at ".$M['dwind']." mph"."($windkmh km/h)";
+	$M['WIND']       = $direction." at ".$M['dwind']." mph"."($windkmh km/h, ".$M['dwindkts']." kt)";
 	if($V[9] !== '') {
 		$M['dwindgust'] = intval(round(convertSpeed((float)$V[9],'kt','mph'),0));
 		$gustkmh        = intval(round(convertSpeed((float)$V[9],'kt','kmh'),0));
-		$M['WIND']     .= ", gusting to ".$M['dwindgust']." mph ($gustkmh km/h)";
+		$M['dwindgustkts'] = (integer)$V[9];
+		$M['WIND']     .= ", gusting to ".$M['dwindgust']." mph ($gustkmh km/h,".$M['dwindgustkts']." kt)";
 	}
 	if($M['dwind'] == 0 and $M['dwinddir'] == 0) {
 		$M['WIND']  = 'Calm';
@@ -317,6 +334,9 @@ offset	data	Convert	Key	sample
 		}
 		$M['CLOUD-DETAILS'] .= "$type $hft ft\t";
 	}
+	if(strlen($M['CLOUD-DETAILS']) > 5) {
+		$M['CLOUD-DETAILS'] = substr($M['CLOUD-DETAILS'],0,strlen($M['CLOUD-DETAILS'])-1);
+	}
 	if($M['CONDITIONS'] == '' and count($saveClouds) > 0) {
 		$c = array_pop($saveClouds);
 		if(isset($cloudCode[$c])) {
@@ -338,6 +358,26 @@ offset	data	Convert	Key	sample
     if(pick_cond_icon($M['codes']) < 0) {
 			$wxCodesMissing[$M['STATION']] = $M['codes'].'|'.$M['RAW-METAR'];
 		}
+	}
+/*
+36	precip_in			0.005
+37	pcp3hr_in			
+38	pcp6hr_in			
+39	pcp24hr_in			
+40	snow_in			
+*/
+	if(!empty($V[36]) or !empty($V[37]) or !empty($V[38]) or !empty($V[39])) { #have precip report
+	  #$Debug .= "<!-- $data -->\n";
+		$p = '';
+		if(!empty($V[36])) { $p .= $V[36].' in, '; }
+		if(!empty($V[37])) { $p .= $V[37].' in (3hr), '; }
+		if(!empty($V[38])) { $p .= $V[38].' in (6hr), '; }
+		if(!empty($V[39])) { $p .= $V[39].' in (24hr), '; }
+		$M['PRECIP'] = substr($p,0,strlen($p)-2);
+	}
+	
+	if(!empty($V[40])) {
+		$M['SNOW'] = 'Snow: '.$V[40].'in';
 	}
 	return($M);
 	
