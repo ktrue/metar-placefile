@@ -215,13 +215,14 @@ function gen_entry($M,$miles,$bearingWR) {
 	
   $output = 'Object: '.$M['LATITUDE'].','.$M['LONGITUDE']. "\n";
   $output .= "Threshold: 999\n";
-  #$output .= "Color: 18 87 87\n";
-  $output .= "Text: -17, 13, 1, ".$M['dtemp']."\n";
-  #$output .= "Color: 0 153 150\n";
-  $output .= "Text: -17, -13, 1, ".$M['ddewpt']."\n";
-  #$output .= "Color: 24 189 7\n";
+	if(isset($M['dtemp'])) {
+    $output .= "Text: -17, 13, 1, ".$M['dtemp']."\n";
+	}
+  if(isset($M['ddewpt'])) {
+    $output .= "Text: -17, -13, 1, ".$M['ddewpt']."\n";
+	}
 	if(isset($M['dvis'])) {
-		$tVis = ($M['dvis'] >= 2.0)?intval(round($M['dvis']),0):$M['dvis'];
+		$tVis = ($M['dvis'] >= 2.0)?intval($M['dvis']):$M['dvis'];
 		if($tVis == 0) {
 		$output .= "Color: 250 0 248\n";  
 		$output .= "Text: 17, -13, 1, ".$tVis."\n";

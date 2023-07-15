@@ -25,6 +25,7 @@ ini_set('display_errors','1');
 // Version 1.04 - 03-Jul-2023 - added CSV error checking
 // Version 1.05 - 08-Jul-2023 - added $M['windkts'], $M['windgustkts'] and text wind info in knots
 // Version 1.06 - 10-Jul-2023 - added precip data $M['PRECIP']
+// Version 1.07 - 15-Jul-2023 - fix issues with missing temp/dp from METAR
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $ourTZ = 'America/Los_Angeles';
@@ -32,7 +33,7 @@ ini_set('display_errors','1');
 // -------------End Settings -----------------------------
 //
 
-$GMLversion = 'get-aviation-metars.php V1.06 - 10-Jul-2023';
+$GMLversion = 'get-aviation-metars.php V1.07 - 15-Jul-2023';
 $NOAA_URL = 'https://www.aviationweather.gov/adds/dataserver_current/current/metars.cache.csv'; // new location 15-June-2016
 //
 $NOAAcacheName = $cacheFileDir."aviationweather-current.csv";
@@ -268,14 +269,26 @@ offset	data	Convert	Key	sample
 		$mNiceName = 'Not Specified';
 	}
 	$M['NAME']      = $mNiceName;
-  $M['dtemp']     = intval(round(convertTemperature((float)$V[5],'c','f'),0));
-	$M['TEMPERATURE'] = $M['dtemp']."F (".intval(round((float)$V[5]))."C)";
-	$M['ddewpt']    = intval(round(convertTemperature((float)$V[6],'c','f'),0));	
-	$M['DEWPT']     = $M['ddewpt']."F (".intval(round((float)$V[6]))."C)";
-	$M['dhum']      = intval(round(calculateHumidity((float)$V[5],(float)$V[6]),0));
-	$M['HUMIDITY']  = $M['dhum']."%";
+	if(!empty($V[5])) {
+    $M['dtemp']     = intval(round(convertTemperature((float)$V[5],'c','f'),0));
+	  $M['TEMPERATURE'] = $M['dtemp']."F (".intval(round((float)$V[5]))."C)";
+	} else {
+		$M['TEMPERATURE'] = 'n/a';
+	}
+	if(!empty($V[6])) {
+	  $M['ddewpt']    = intval(round(convertTemperature((float)$V[6],'c','f'),0));	
+	  $M['DEWPT']     = $M['ddewpt']."F (".intval(round((float)$V[6]))."C)";
+	} else {
+    $M['DEWPT']		  = 'n/a';
+	}
+	if(!empty($V[5]) and !empty($V[6])) {
+  	$M['dhum']      = intval(round(calculateHumidity((float)$V[5],(float)$V[6]),0));
+	  $M['HUMIDITY']  = $M['dhum']."%";
+	} else {
+		$M['HUMIDITY']  = 'n/a';
+	}
 
-  if($M['dtemp'] >= 79) {
+  if(isset($M['dtemp']) and isset($M['dhum']) and $M['dtemp'] >= 79) {
 		$M['dheatidx'] = intval(round(calculateHeatIndex($M['dtemp'],$M['dhum'],'F'),0));
 		$thidxc=         intval(round(convertTemperature($M['dheatidx'],'f','c'),0));
 		$M['HEATINDEX'] = $M['dheatidx']."F ({$thidxc}C)";
@@ -301,7 +314,7 @@ offset	data	Convert	Key	sample
 		$M['WIND']  = 'Calm';
 	}
 
-	if($M['dtemp'] <= 50 and $M['dwind'] > 0) {
+	if(isset($M['dtemp']) and $M['dtemp'] <= 50 and $M['dwind'] > 0) {
 		$M['dwindch'] = intval(round(calculateWindChill($M['dtemp'],$M['dwind']),0));
 		$twindchC     = intval(round(convertTemperature($M['dwindch'],'f','c'),0));
 		$M['WINDCHILL'] = $M['dwindch']."F ({$twindchC}C)";
@@ -897,7 +910,10 @@ function GML_fetch_microtime()
         }
         $dewSSP  = 6.1078 * pow(10, ($a * $dewPoint) / ($b + $dewPoint));
 
-        return (100 * $dewSSP / $tempSSP);
+        $dp = 100 * $dewSSP / $tempSSP;
+				if($dp < 0) {$dp = 0.0;}
+				if($dp > 100) {$dp = 100.0;}
+        return ($dp);
     }
     // }}}
 
