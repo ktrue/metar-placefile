@@ -27,6 +27,7 @@ Version 1.03 - 08-Jul-2023 - switch to using knots for determining wind barb, ad
 Version 1.04 - 10-Jul-2023 - display separate gust barb w/value, alert img for heat-index, high wind and low visibility
 Version 1.05 - 10-Jul-2023 - add precip (if present) to popup
 Version 1.06 - 11-Jul-2023 - added icon display formats per Mike Davis, added wind-chill display
+Version 1.07 - 15-Jul-2023 - update from Mike Davis for improved visibility display
 */
 #---------------------------------------------------------------------------
 
@@ -35,7 +36,7 @@ date_default_timezone_set('UTC');
 $timeFormat = "d-M-Y g:ia T";  // time display for date() in popup
 #-----------end of settings-------------------------------------------------
 
-$Version = "metar-placefile.php V1.06 - 11-Jul-2023 - webmaster@saratoga-weather.org";
+$Version = "metar-placefile.php V1.07 - 15-Jul-2023 - webmaster@saratoga-weather.org";
 global $Version,$timeFormat;
 
 // self downloader
@@ -220,9 +221,16 @@ function gen_entry($M,$miles,$bearingWR) {
   $output .= "Text: -17, -13, 1, ".$M['ddewpt']."\n";
   #$output .= "Color: 24 189 7\n";
 	if(isset($M['dvis'])) {
-		$tVis = ($M['dvis'] >= 2.0)?intval($M['dvis']):$M['dvis'];
-    $output .= "Text: 17, -13, 1, ".$tVis."\n";
-		if($tVis >= 1 && $tVis < 3) {
+		$tVis = ($M['dvis'] >= 2.0)?intval(round($M['dvis']),0):$M['dvis'];
+		if($tVis == 0) {
+		$output .= "Color: 250 0 248\n";  
+		$output .= "Text: 17, -13, 1, ".$tVis."\n";
+		}
+		if($tVis <= 1) {
+		$output .= "Color: 250 0 248\n";  
+		$output .= "Text: 24, -13, 1, ".$tVis."\n";
+		}
+		if($tVis > 1 && $tVis < 3) {
 		$output .= "Color: 247 11 15\n";  
 		$output .= "Text: 17, -13, 1, ".$tVis."\n";
 		}
@@ -230,15 +238,11 @@ function gen_entry($M,$miles,$bearingWR) {
 		$output .= "Color: 255 255 0\n";  
 		$output .= "Text: 17, -13, 1, ".$tVis."\n";
 		}
-			if($tVis > 5) {
+		if($tVis > 5) {
 		$output .= "Color: 24 189 7\n";  
 		$output .= "Text: 17, -13, 1, ".$tVis."\n";
 		}
-			if($tVis == 0) {
-		$output .= "Color: 250 0 248\n";  
-		$output .= "Text: 17, -13, 1, ".$tVis."\n";
-		}
-	$output .= "Color: 255 255 255\n";
+	  $output .= "Color: 255 255 255\n";
 	}
   #$output .= "Color: 24 189 7\n";
 	if($M['dalthpa'] > 500) {
