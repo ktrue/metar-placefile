@@ -35,7 +35,7 @@ ini_set('display_errors','1');
 //
 
 $GMLversion = 'get-aviation-metars.php V1.08 - 16-Oct-2023';
-$NOAA_URL = 'https://beta.aviationweather.gov/data/cache/metars.cache.csv.gz'; // new location 15-June-2016
+$NOAA_URL = 'https://aviationweather.gov/data/cache/metars.cache.csv.gz'; // new location 15-June-2016
 //
 $NOAAcacheName = $cacheFileDir."aviationweather-current.csv";
 $outputFile    = 'aviation-metars-data-inc.php';
@@ -87,7 +87,7 @@ $wxCodesMissing = array();
 
 $rawGZ = GML_fetchUrlWithoutHanging($NOAA_URL);
 # ---------------------------------------------------------------------------------
-# note: new url of https://beta.aviationweather.gov/data/cache/metars.cache.csv.gz 
+# note: new url of https://aviationweather.gov/data/cache/metars.cache.csv.gz 
 # returns a truncated header of \x0c with curl.  grrr.
 # we'll prepend a 'good header' for the gzip return to let the gzdecode work
 # ---------------------------------------------------------------------------------
