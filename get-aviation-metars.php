@@ -26,6 +26,7 @@ ini_set('display_errors','1');
 // Version 1.05 - 08-Jul-2023 - added $M['windkts'], $M['windgustkts'] and text wind info in knots
 // Version 1.06 - 10-Jul-2023 - added precip data $M['PRECIP']
 // Version 1.07 - 15-Jul-2023 - fix issues with missing temp/dp from METAR
+// Version 1.08 - 16-Oct-2023 - update for new aviationweather.gov website changes 
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $ourTZ = 'America/Los_Angeles';
@@ -33,8 +34,8 @@ ini_set('display_errors','1');
 // -------------End Settings -----------------------------
 //
 
-$GMLversion = 'get-aviation-metars.php V1.07 - 15-Jul-2023';
-$NOAA_URL = 'https://www.aviationweather.gov/adds/dataserver_current/current/metars.cache.csv'; // new location 15-June-2016
+$GMLversion = 'get-aviation-metars.php V1.08 - 16-Oct-2023';
+$NOAA_URL = 'https://beta.aviationweather.gov/data/cache/metars.cache.csv.gz'; // new location 15-June-2016
 //
 $NOAAcacheName = $cacheFileDir."aviationweather-current.csv";
 $outputFile    = 'aviation-metars-data-inc.php';
@@ -84,8 +85,27 @@ $missingLLE = array();
 $wxCodesSeen = array();
 $wxCodesMissing = array();
 
-$rawHTML = GML_fetchUrlWithoutHanging($NOAA_URL);
-file_put_contents($cacheFileDir.'aviation-metar-raw.txt',$rawHTML);
+$rawGZ = GML_fetchUrlWithoutHanging($NOAA_URL);
+# ---------------------------------------------------------------------------------
+# note: new url of https://beta.aviationweather.gov/data/cache/metars.cache.csv.gz 
+# returns a truncated header of \x0c with curl.  grrr.
+# we'll prepend a 'good header' for the gzip return to let the gzdecode work
+# ---------------------------------------------------------------------------------
+$goodHeader = "\x1f\x8b\x08\x08";
+$badHeader  = "\x0c";
+$rawHTML = gzdecode($goodHeader.$rawGZ);
+if($rawHTML !== false) {
+  file_put_contents($cacheFileDir.'aviation-metar-raw.txt',$rawHTML);
+	$Debug .= "<!-- saved ".$cacheFileDir.'aviation-metar-raw.txt'." raw data file -->\n";
+} else {
+	file_put_contents($cacheFileDir.'aviation-metar-csv.gz.txt',$rawGZ);
+	$Debug .= "<!-- Oops.. gzdecode of $NOAA_URL contents failed -->\n";
+  $Debug = preg_replace('|<!--|is','',$Debug);
+  $Debug = preg_replace('|-->|is','',$Debug);
+  print "<pre>\n";
+  print $Debug;
+	exit();
+}
 
 $Debug .= "<!-- Processing METAR entries -->\n";
 $recs = explode("\n",$rawHTML);
@@ -482,11 +502,15 @@ function decode_conditions ($codes) {
   curl_setopt($ch, CURLOPT_URL, $theURL);                         // connect to provided URL
   curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);                 // don't verify peer certificate
   curl_setopt($ch, CURLOPT_USERAGENT, 
-    'Mozilla/5.0 (get-tgftp-metar.php - saratoga-weather.org)');
+    'Mozilla/5.0 (get-aviation-metars.php - saratoga-weather.org)');
 
   curl_setopt($ch,CURLOPT_HTTPHEADER,                          // request LD-JSON format
      array (
-         "Accept: text/html,text/plain"
+         "Accept: */*",
+				 "Accept-Encoding: gzip,deflate,br",
+				 "Pragma: no-cache",
+				 "Cache-Control: no-cache"
+				 
      ));
 
   curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $numberOfSeconds);  //  connection timeout
