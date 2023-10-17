@@ -13,6 +13,7 @@
 // Version 1.02 - 27-Jun-2023 - added CSV import capability
 // Version 1.03 - 28-Jun-2023 - added CSV import error checking
 // Version 1.04 - 01-Jul-2023 - additional error checking on import of new_station_data.txt file
+// Version 1.05 - 17-Oct-2023 - script inoperative. Data source no longer available
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $GMLcacheName = "metar-location-raw.txt";    // cache file for stations.txt
@@ -24,7 +25,7 @@ date_default_timezone_set('America/Los_Angeles');
 //
 header('Content-type: text/plain,charset=ISO-8859-1');
 
-$GMLversion = 'get-metar-metadata.php V1.04 - 01-Jul-2023';
+$GMLversion = 'get-metar-metadata.php V1.05 - 17-Oct-2023';
 #$GML_URL = "http://weather.rap.ucar.edu/surface/stations.txt";  // metar station names/locations
 $GML_URL = "https://www.aviationweather.gov/docs/metar/stations.txt";  // metar station names/locations
 
@@ -52,6 +53,10 @@ print ".. $GMLversion \n";
 // You can now force the cache to update by adding ?force=1 to the end of the URL
 $Debug = '';
 
+print "-- script is not operative after 16-Oct-2023 due to changes at aviationweather.gov site\n";
+print "  the metar-metadata-inc.php is now a static file until a new source for the data is found.\n";
+print "..exiting.\n";
+exit(0);
 
 $WhereLoaded = "from URL $GML_URL";
 $html = GML_fetchUrlWithoutHanging($GML_URL);
