@@ -28,6 +28,7 @@ ini_set('display_errors','1');
 // Version 1.07 - 15-Jul-2023 - fix issues with missing temp/dp from METAR
 // Version 1.08 - 16-Oct-2023 - update for new aviationweather.gov website changes 
 // Version 1.09 - 17-Oct-2023 - additional fixes for new aviationweather.gov website changes
+// Version 1.10 - 18-Oct-2023 - additional fixes for new aviationweather.gov website changes+LFBT metar fix
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $ourTZ = 'America/Los_Angeles';
@@ -35,7 +36,7 @@ ini_set('display_errors','1');
 // -------------End Settings -----------------------------
 //
 
-$GMLversion = 'get-aviation-metars.php V1.09 - 17-Oct-2023';
+$GMLversion = 'get-aviation-metars.php V1.10 - 18-Oct-2023 - saratoga-weather.org';
 $NOAA_URL = 'https://aviationweather.gov/data/cache/metars.cache.csv.gz'; // new location 15-June-2016
 //
 $NOAAcacheName = $cacheFileDir."aviationweather-current.csv";
@@ -92,7 +93,7 @@ $rawGZ = GML_fetchUrlWithoutHanging($NOAA_URL);
 # returns a truncated header of \x0c with curl.  grrr.
 # we'll prepend a 'good header' for the gzip return to let the gzdecode work
 # ---------------------------------------------------------------------------------
-$goodHeader = "\x1f\x8b\x08\x08";
+$goodHeader = "\x1f\x8b\x08\x08"; # 4-byte GZ file header
 if(substr($rawGZ,0,4) === $goodHeader) {# check for valid GZ header
   $Debug .= "<!-- ..GZ file has good header\n";
 	$rawHTML = gzdecode($rawGZ);
@@ -277,28 +278,29 @@ offset	data	Convert	Key	sample
 
 */
 	$M = array();
-	$V = explode(',',$data); // split up CSV record
+	$V = str_getcsv($data); // split up CSV record
 	if(count($V) != 44) {
 		$Debug .= "<!-- malformed record '".$V[0]."' with ".count($V)." fields rejected. -->\n";
 		return($M);
 	}
+	if($icao == 'LFBT') {$V[4] = '0.0000';} #kludge to fix empty longitude in CSV for this station
 	$M['RAW-METAR'] = $V[0];
 	$M['FIX-METAR'] = $V[0];
 	$M['STATION']   = $icao;
 	$M['OBSTIME']   = $V[2];
 	$M['LATITUDE']  = $V[3];
 	$M['LONGITUDE'] = $V[4];
-	if(empty($V[3]) or empty($V[4])) {
-		$missingLLE[$icao] = $icao;
+	if(!is_numeric($V[3]) or !is_numeric($V[4])) {
+		$missingLLE[$icao] = $icao."(lat='".$V[3]."', lon='".$V[4]."')";
 	}
 	$M['ELEVATION'] = intval(round(convertDistance((float)$V[43],'m','ft'),0));
 	if(isset($metarMetadata[$icao])) {
 		list($mICAO,$mNiceName,$mLat,$mLon,$mElevFeet,$mCountryState,$mName) 
 		  = explode("|",$metarMetadata[$icao]);
 	  $M['LOOKUP'] = "$mLat,$mLon,$mElevFeet";
-		if(empty($V[3]) )  {$M['LATITUDE']  = $mLat; }
-		if(empty($V[4]) )  {$M['LONGITUDE'] = $mLon; }
-		if(empty($V[43]) ) {$M['ELEVATION'] = $mElevFeet; }
+		if(!is_numeric($V[3]) )  {$M['LATITUDE']  = $mLat; }
+		if(!is_numeric($V[4]) )  {$M['LONGITUDE'] = $mLon; }
+		if(!is_numeric($V[43]) ) {$M['ELEVATION'] = $mElevFeet; }
 	} else {
 		$mNiceName = 'Not Specified';
 	}
@@ -624,7 +626,7 @@ Array
 	  'header'=>"Cache-Control: no-cache, must-revalidate\r\n" .
 				"Cache-control: max-age=0\r\n" .
 				"Connection: close\r\n" .
-				"User-agent: Mozilla/5.0 (cron-metar.php - saratoga-weather.org)\r\n" .
+				"User-agent: Mozilla/5.0 (get-aviation-metars.php - saratoga-weather.org)\r\n" .
 				"Accept: text/html,text/plain\r\n"
 	  ),
 	  'https'=>array(
@@ -633,7 +635,7 @@ Array
 	  'header'=>"Cache-Control: no-cache, must-revalidate\r\n" .
 				"Cache-control: max-age=0\r\n" .
 				"Connection: close\r\n" .
-				"User-agent: Mozilla/5.0 (cron-metar.php - saratoga-weather.org)\r\n" .
+				"User-agent: Mozilla/5.0 (get-aviation-metars.php - saratoga-weather.org)\r\n" .
 				"Accept: text/html,text/plain\r\n"
 	  )
 	);
@@ -1024,3 +1026,4 @@ function calculateHeatIndex ($temp,$humidity,$useunit) {
   }
   return($heatIndex);	
 }
+

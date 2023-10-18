@@ -6,7 +6,7 @@ last-modified: Wed, 05 Jul 2023 18:04:11 GMT
 etag: "c6c55-5ffc13a0d52d2-gzip"
 content-type: text/plain
 strict-transport-security: max-age=31536000; includeSubdomains; preload
-date: Tue, 11 Jul 2023 00:02:59 GMT
+date: Mon, 09 Oct 2023 17:44:22 GMT
 
 ! Author: Greg Thompson  NCAR/RAP
 ! Updated: NCEP/AWC

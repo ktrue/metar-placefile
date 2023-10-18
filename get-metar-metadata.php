@@ -13,7 +13,7 @@
 // Version 1.02 - 27-Jun-2023 - added CSV import capability
 // Version 1.03 - 28-Jun-2023 - added CSV import error checking
 // Version 1.04 - 01-Jul-2023 - additional error checking on import of new_station_data.txt file
-// Version 1.05 - 17-Oct-2023 - script inoperative. Data source no longer available
+// Version 1.05 - 18-Oct-2023 - use saved stations.txt if new version not available via URL
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $GMLcacheName = "metar-location-raw.txt";    // cache file for stations.txt
@@ -25,7 +25,7 @@ date_default_timezone_set('America/Los_Angeles');
 //
 header('Content-type: text/plain,charset=ISO-8859-1');
 
-$GMLversion = 'get-metar-metadata.php V1.05 - 17-Oct-2023';
+$GMLversion = 'get-metar-metadata.php V1.05 - 18-Oct-2023 - saratoga-weather.org';
 #$GML_URL = "http://weather.rap.ucar.edu/surface/stations.txt";  // metar station names/locations
 $GML_URL = "https://www.aviationweather.gov/docs/metar/stations.txt";  // metar station names/locations
 
@@ -53,20 +53,26 @@ print ".. $GMLversion \n";
 // You can now force the cache to update by adding ?force=1 to the end of the URL
 $Debug = '';
 
-print "-- script is not operative after 16-Oct-2023 due to changes at aviationweather.gov site\n";
-print "  the metar-metadata-inc.php is now a static file until a new source for the data is found.\n";
-print "..exiting.\n";
-exit(0);
 
 $WhereLoaded = "from URL $GML_URL";
 $html = GML_fetchUrlWithoutHanging($GML_URL);
-$fp = fopen($GMLcacheName, "w"); 
-if($fp) {
-	$write = fputs($fp, $html); 
-	fclose($fp);
-	$Debug .= ".. Wrote cache $GMLcacheName \n";
+if(strlen($html) > 10000) {
+	$fp = fopen($GMLcacheName, "w"); 
+	if($fp) {
+		$write = fputs($fp, $html); 
+		fclose($fp);
+		$Debug .= ".. Wrote cache $GMLcacheName \n";
+	} else {
+		$Debug .= ".. Unable to write cache $GMLcacheName \n";
+	}
 } else {
-	$Debug .= ".. Unable to write cache $GMLcacheName \n";
+	if(file_exists($GMLcacheName)) {
+		$html = file_get_contents($GMLcacheName);
+		$WhereLoaded = "from cache $GMLcacheName";
+	} else {
+		$html = '';
+		$WhereLoaded = "$GMLcacheName is not available";
+	}
 }
 $Debug .= ".. metar metadata load from $WhereLoaded \n";
 
@@ -105,6 +111,7 @@ $mState = '';
 $mDated = '';
 $canadaProvinces = ',ALBERTA,BRITISH COLUMBIA,MANITOBA,NEW BRUNSWICK,NEWFOUNDLAND,NOVA SCOTIA,N.W. TERRITORIES,NUNAVUT,ONTARIO,PRINCE EDWARD ISLAND,QUEBEC,SASKATCHEWAN,YUKON TERRITORY,';
 $mStates = array();
+$mStateNames = array();
 $returnMetars = array();
 $nMetars = 0;
 $nNotInNOAA = 0;
@@ -136,6 +143,16 @@ foreach ($records as $n => $rec) {
   $mICAO  = substr($rec,20,4);
   if($mICAO == 'ICAO' or strlen(trim($mICAO)) < 4) {continue; }
 
+  $tState = substr($rec,0,2);
+	if($tState !== '  ') {
+		if(isset($mStates[$tState])) {
+			$mStates[$tState]++;
+		} else {
+			$mStates[$tState] = 1;
+		}
+		
+	}
+	
   $mRawLat = trim(substr($rec,39,6));
   $mRawLon = trim(substr($rec,47,7));
   $mRawElev = trim(substr($rec,55,4));
@@ -158,6 +175,12 @@ foreach ($records as $n => $rec) {
   } else {
 	  $mNiceName .= ', ' . $mNiceState;
   }
+	$mTcode = empty($mCD)?':'.substr($mICAO,0,2):$mCD;
+	$mTstate = empty($mCD)?'C:'.$mNiceState:$mNiceState;
+	if(!empty($mCD)){
+	  $mTstate .= (strpos($canadaProvinces,$mState) !== false)?', Canada':', USA';
+  }
+	$mStateNames[$mTstate] = $mTcode;
   $nMetars++;
   $returnMetars["$mICAO"] =  "$mICAO|$mNiceName|$mLat|$mLon|$mElevFeet|$mCountry$mState|$mName|";
 	
@@ -198,10 +221,21 @@ if(file_exists($GMLaddedFile)) {
 	$heading = "<?php\n".
 	"# $GMLversion\n".
 	"# Run on ".date('r')."\n".
-	"# Raw data updated $GMLupdated from $GML_URL\n".
+	"# Raw data updated $GMLupdated $WhereLoaded\n".
 	"#\n".
 	"\$metarMetadata = ";
   file_put_contents($GMLoutputFile,$heading.var_export($returnMetars,true).";\n");
+	ksort($mStates);
+	print ".. ".count($mStates)." states = array(\n";
+	foreach($mStates as $state => $count) {
+		print "'$state',";
+	}
+	print ");\n";
+
+  ksort($mStateNames);
+	print ".. ".count($mStateNames)." stateNames = ".var_export($mStateNames,true).";\n";
+
+		
   print ".. output file $GMLoutputFile saved with \$metarMetadata array.\n";
 	print ".. Done.\n";
 	
@@ -240,7 +274,7 @@ function GML_DMS($input) {
   curl_setopt($ch, CURLOPT_URL, $theURL);                         // connect to provided URL
   curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);                 // don't verify peer certificate
   curl_setopt($ch, CURLOPT_USERAGENT, 
-    'Mozilla/5.0 (get-UV-forecast-inc.php - saratoga-weather.org)');
+    'Mozilla/5.0 (get-metar-metadata.php - saratoga-weather.org)');
 
   curl_setopt($ch,CURLOPT_HTTPHEADER,                          // request LD-JSON format
      array (
@@ -344,7 +378,7 @@ Array
 	  'header'=>"Cache-Control: no-cache, must-revalidate\r\n" .
 				"Cache-control: max-age=0\r\n" .
 				"Connection: close\r\n" .
-				"User-agent: Mozilla/5.0 (get-UV-forecast-inc.php - saratoga-weather.org)\r\n" .
+				"User-agent: Mozilla/5.0 (get-metar-metadata.php - saratoga-weather.org)\r\n" .
 				"Accept: text/html,text/plain\r\n"
 	  ),
 	  'https'=>array(
@@ -353,7 +387,7 @@ Array
 	  'header'=>"Cache-Control: no-cache, must-revalidate\r\n" .
 				"Cache-control: max-age=0\r\n" .
 				"Connection: close\r\n" .
-				"User-agent: Mozilla/5.0 (get-UV-forecast-inc.php - saratoga-weather.org)\r\n" .
+				"User-agent: Mozilla/5.0 (get-metar-metadata.php - saratoga-weather.org)\r\n" .
 				"Accept: text/html,text/plain\r\n"
 	  )
 	);

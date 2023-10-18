@@ -32,4 +32,3 @@ CWNM,Nelson,49.51,-117.30,535
 CWPR,Princeton,49.47,-120.52,700               
 CWSK,Squamish,49.78,-123.17,52              
 CWWA,West Vancouver,49.33,-123.18,178          
- 

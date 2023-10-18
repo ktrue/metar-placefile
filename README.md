@@ -15,14 +15,12 @@ The *metar-placefile.php* script is to be accessed by including the website URL 
 
 ### *get-metar-metadata.php*
 
-**NOTE:** this script is currently not functional after 16-Oct-2023 as the new aviationweather.gov website does not have the source file currently.
-Continue to use the metar-metadata-inc.php from this distribution and turn off the cron for this script until further notice.
-
 This script reads the **stations.txt** from aviationweather.gov and merges optional updates from
 **new_station_data.txt** (a comma delimited CSV file) to produce *metar-metadata-inc.php* which
 is used by the *get-aviation-metars.php* program for all the descriptive info about a METAR site.
 
 It should be run daily by cron .. the source file doesn't change very often.
+If the **stations.txt** file is not available, the cache file **metar-location-raw.txt** will be used instead
 
 ### *get-aviation-metars.php*
 
@@ -50,7 +48,7 @@ It requires the following files:
 
 The script uses 2 icon files:  *windbarbs_75_new.png*, *cloudcover_new.png*
 
-If you run the script for debugging in a browser, add `?dpi=96&lat={latitude}&lon={longitude}` to
+If you run the script for debugging in a browser, add `?version=1.5&dpi=96&lat={latitude}&lon={longitude}` to
 the *metar-placefile.php* URL so it knows what to select for display.
 
 ### *metar-cond-iconcodes-inc.php*
