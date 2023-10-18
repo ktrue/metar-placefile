@@ -15,6 +15,9 @@ The *metar-placefile.php* script is to be accessed by including the website URL 
 
 ### *get-metar-metadata.php*
 
+**NOTE:** this script is currently not functional after 16-Oct-2023 as the new aviationweather.gov website does not have the source file currently.
+Continue to use the metar-metadata-inc.php from this distribution and turn off the cron for this script until further notice.
+
 This script reads the **stations.txt** from aviationweather.gov and merges optional updates from
 **new_station_data.txt** (a comma delimited CSV file) to produce *metar-metadata-inc.php* which
 is used by the *get-aviation-metars.php* program for all the descriptive info about a METAR site.
