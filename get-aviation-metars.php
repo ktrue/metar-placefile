@@ -29,6 +29,7 @@ ini_set('display_errors','1');
 // Version 1.08 - 16-Oct-2023 - update for new aviationweather.gov website changes 
 // Version 1.09 - 17-Oct-2023 - additional fixes for new aviationweather.gov website changes
 // Version 1.10 - 18-Oct-2023 - additional fixes for new aviationweather.gov website changes+LFBT metar fix
+// Version 1.11 - 27-Nov-2023 - fix error with temp/dewpt at 0C/32F non-display
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $ourTZ = 'America/Los_Angeles';
@@ -36,7 +37,7 @@ ini_set('display_errors','1');
 // -------------End Settings -----------------------------
 //
 
-$GMLversion = 'get-aviation-metars.php V1.10 - 18-Oct-2023 - saratoga-weather.org';
+$GMLversion = 'get-aviation-metars.php V1.11 - 27-Nov-2023 - saratoga-weather.org';
 $NOAA_URL = 'https://aviationweather.gov/data/cache/metars.cache.csv.gz'; // new location 15-June-2016
 //
 $NOAAcacheName = $cacheFileDir."aviationweather-current.csv";
@@ -93,6 +94,16 @@ $rawGZ = GML_fetchUrlWithoutHanging($NOAA_URL);
 # returns a truncated header of \x0c with curl.  grrr.
 # we'll prepend a 'good header' for the gzip return to let the gzdecode work
 # ---------------------------------------------------------------------------------
+if(strlen($rawGZ) < 5000) {
+	$Debug .= "<!-- Oops.. insufficient data returned at ".date('Ymd-Hms')." -->\n";
+	$Debug .= "<!-- rawGZ returned ".strlen($rawGZ)." bytes. -->\n";
+  $Debug = preg_replace('|<!--|is','',$Debug);
+  $Debug = preg_replace('|-->|is','',$Debug);
+  print "<pre>\n";
+  print $Debug;
+	file_put_contents($cacheFileDir.'log-'.date('Ymd').'.txt',"----------\n".$Debug,FILE_APPEND );
+	exit();
+}
 $goodHeader = "\x1f\x8b\x08\x08"; # 4-byte GZ file header
 if(substr($rawGZ,0,4) === $goodHeader) {# check for valid GZ header
   $Debug .= "<!-- ..GZ file has good header\n";
@@ -106,9 +117,9 @@ if($rawHTML !== false) {
   file_put_contents($cacheFileDir.'aviation-metar-raw.txt',$rawHTML);
 	$Debug .= "<!-- saved '".$cacheFileDir.'aviation-metar-raw.txt'."' raw data file -->\n";
 } else {
-	file_put_contents($cacheFileDir.'aviation-metar-csv.gz.txt',$rawGZ);
+	file_put_contents($cacheFileDir.'aviation-metar-csv.gz.'.date('Ymd-His').'.txt',$rawGZ);
 	$Debug .= "<!-- Oops.. gzdecode of $NOAA_URL contents failed -->\n";
-	$Debug .= "<!--  saved raw GZ file to '".$cacheFileDir.'aviation-metar-csv.gz.txt'."' -->\n";
+	$Debug .= "<!--  saved raw GZ file to '".$cacheFileDir.'aviation-metar-csv.gz.'.date('Ymd-His').'.txt'."' -->\n";
   $Debug = preg_replace('|<!--|is','',$Debug);
   $Debug = preg_replace('|-->|is','',$Debug);
   print "<pre>\n";
@@ -305,19 +316,19 @@ offset	data	Convert	Key	sample
 		$mNiceName = 'Not Specified';
 	}
 	$M['NAME']      = $mNiceName;
-	if(!empty($V[5])) {
+	if(isset($V[5])) {
     $M['dtemp']     = intval(round(convertTemperature((float)$V[5],'c','f'),0));
 	  $M['TEMPERATURE'] = $M['dtemp']."F (".intval(round((float)$V[5]))."C)";
 	} else {
 		$M['TEMPERATURE'] = 'n/a';
 	}
-	if(!empty($V[6])) {
+	if(isset($V[6])) {
 	  $M['ddewpt']    = intval(round(convertTemperature((float)$V[6],'c','f'),0));	
 	  $M['DEWPT']     = $M['ddewpt']."F (".intval(round((float)$V[6]))."C)";
 	} else {
     $M['DEWPT']		  = 'n/a';
 	}
-	if(!empty($V[5]) and !empty($V[6])) {
+	if(isset($V[5]) and isset($V[6])) {
   	$M['dhum']      = intval(round(calculateHumidity((float)$V[5],(float)$V[6]),0));
 	  $M['HUMIDITY']  = $M['dhum']."%";
 	} else {
