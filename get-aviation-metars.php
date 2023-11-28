@@ -31,6 +31,7 @@ ini_set('display_errors','1');
 // Version 1.10 - 18-Oct-2023 - additional fixes for new aviationweather.gov website changes+LFBT metar fix
 // Version 1.11 - 27-Nov-2023 - fix error with temp/dewpt at 0C/32F non-display
 // Version 1.12 - 28-Nov-2023 - fix issue with temp 0F(0C) display
+// Version 1.13 - 28-Nov-2023 - fix issue with temp 0F(0C) display w/PHP 7.4+
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $ourTZ = 'America/Los_Angeles';
@@ -38,7 +39,7 @@ ini_set('display_errors','1');
 // -------------End Settings -----------------------------
 //
 
-$GMLversion = 'get-aviation-metars.php V1.12 - 28-Nov-2023 - saratoga-weather.org';
+$GMLversion = 'get-aviation-metars.php V1.13 - 28-Nov-2023 - saratoga-weather.org';
 $NOAA_URL = 'https://aviationweather.gov/data/cache/metars.cache.csv.gz'; // new location 15-June-2016
 //
 $NOAAcacheName = $cacheFileDir."aviationweather-current.csv";
@@ -337,19 +338,19 @@ offset	data	Convert	Key	sample
 	}
 	$M['NAME']      = $mNiceName;
 	if(isset($V[5]) and is_numeric($V[5])) {
-    $M['dtemp']     = intval(round(convertTemperature((float)$V[5],'c','f'),0));
-	  $M['TEMPERATURE'] = $M['dtemp']."F (".intval(round((float)$V[5]))."C)";
+    $M['dtemp']     = intval(round(convertTemperature($V[5],'c','f'),0));
+	  $M['TEMPERATURE'] = $M['dtemp']."F (".intval(round($V[5]))."C)";
 	} else {
 		$M['TEMPERATURE'] = 'n/a';
 	}
 	if(isset($V[6]) and is_numeric($V[6])) {
-	  $M['ddewpt']    = intval(round(convertTemperature((float)$V[6],'c','f'),0));	
-	  $M['DEWPT']     = $M['ddewpt']."F (".intval(round((float)$V[6]))."C)";
+	  $M['ddewpt']    = intval(round(convertTemperature($V[6],'c','f'),0));	
+	  $M['DEWPT']     = $M['ddewpt']."F (".intval(round($V[6]))."C)";
 	} else {
     $M['DEWPT']		  = 'n/a';
 	}
 	if(isset($V[5]) and is_numeric($V[5]) and isset($V[6]) and is_numeric($V[6])) {
-  	$M['dhum']      = intval(round(calculateHumidity((float)$V[5],(float)$V[6]),0));
+  	$M['dhum']      = intval(round(calculateHumidity($V[5],$V[6]),0));
 	  $M['HUMIDITY']  = $M['dhum']."%";
 	} else {
 		$M['HUMIDITY']  = 'n/a';
@@ -367,13 +368,13 @@ offset	data	Convert	Key	sample
 	} else {
 		$direction       = 'n/a';
 	}
-	$M['dwind']      = intval(round(convertSpeed((float)$V[8],'kt','mph'),0));
+	$M['dwind']      = intval(round(convertSpeed($V[8],'kt','mph'),0));
 	$M['dwindkts']   = (integer)$V[8];
-	$windkmh         = intval(round(convertSpeed((float)$V[8],'kt','kmh'),0));
+	$windkmh         = intval(round(convertSpeed($V[8],'kt','kmh'),0));
 	$M['WIND']       = $direction." at ".$M['dwind']." mph"."($windkmh km/h, ".$M['dwindkts']." kt)";
 	if($V[9] !== '') {
-		$M['dwindgust'] = intval(round(convertSpeed((float)$V[9],'kt','mph'),0));
-		$gustkmh        = intval(round(convertSpeed((float)$V[9],'kt','kmh'),0));
+		$M['dwindgust'] = intval(round(convertSpeed($V[9],'kt','mph'),0));
+		$gustkmh        = intval(round(convertSpeed($V[9],'kt','kmh'),0));
 		$M['dwindgustkts'] = (integer)$V[9];
 		$M['WIND']     .= ", gusting to ".$M['dwindgust']." mph ($gustkmh km/h,".$M['dwindgustkts']." kt)";
 	}
@@ -765,14 +766,15 @@ function GML_fetch_microtime()
      * @return  float
      * @access  public
      */
-    function convertTemperature($temperature, $from, $to)
+    function convertTemperature($intemperature, $from, $to)
     {
-        if ($temperature == "N/A") {
-            return $temperature;
+        if (!is_numeric($intemperature) or $intemperature == '') {
+            return 'n/a';
         }
 
         $from = strtolower($from[0]);
         $to   = strtolower($to[0]);
+				$temperature = (float)$intemperature;
 
         $result = array(
             "f" => array(
@@ -801,10 +803,11 @@ function GML_fetch_microtime()
      * @access  public
      * @link    http://www.spc.noaa.gov/faq/tornado/beaufort.html
      */
-    function convertSpeed($speed, $from, $to)
+    function convertSpeed($inspeed, $from, $to)
     {
         $from = strtolower($from);
         $to   = strtolower($to);
+				$speed = (float)$inspeed;
 
         static $factor;
         static $beaufort;
