@@ -11,6 +11,7 @@
 Version 1.00 - 30-Jun-2023 - initial release
 Version 1.01 - 01-Jul-2023 - added 'OVX' for Vertical Visibility
 Version 1.02 - 03-Jul-2023 - added SA, DU, SS, DS for Sand/Dust
+Version 1.03 - 27-Nov-2023 - added IC for Ice Crystals
 
 */
 // self downloader
@@ -170,6 +171,10 @@ static $condIcons = array(
 	'+FZFG' => 39,
 	'-FZFG' => 39,
 	'FZFG' => 39,
+
+	'+IC'  => 39, // ice crystals
+	'-IC'  => 39,
+	'IC'   => 39,
 	
 	'SNSH' => 16,
 	'SHSN' => 16,
