@@ -38,7 +38,7 @@ ini_set('display_errors','1');
 // -------------End Settings -----------------------------
 //
 
-$GMLversion = 'get-aviation-metars.php V1.11 - 27-Nov-2023 - saratoga-weather.org';
+$GMLversion = 'get-aviation-metars.php V1.12 - 28-Nov-2023 - saratoga-weather.org';
 $NOAA_URL = 'https://aviationweather.gov/data/cache/metars.cache.csv.gz'; // new location 15-June-2016
 //
 $NOAAcacheName = $cacheFileDir."aviationweather-current.csv";
