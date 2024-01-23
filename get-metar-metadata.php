@@ -14,6 +14,7 @@
 // Version 1.03 - 28-Jun-2023 - added CSV import error checking
 // Version 1.04 - 01-Jul-2023 - additional error checking on import of new_station_data.txt file
 // Version 1.05 - 18-Oct-2023 - use saved stations.txt if new version not available via URL
+// Version 1.06 - 22-Jan-2024 - script deprecated. Source data no longer available
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $GMLcacheName = "metar-location-raw.txt";    // cache file for stations.txt
@@ -25,7 +26,7 @@ date_default_timezone_set('America/Los_Angeles');
 //
 header('Content-type: text/plain,charset=ISO-8859-1');
 
-$GMLversion = 'get-metar-metadata.php V1.05 - 18-Oct-2023 - saratoga-weather.org';
+$GMLversion = 'get-metar-metadata.php V1.06 - 22-Jan-2024 - saratoga-weather.org';
 #$GML_URL = "http://weather.rap.ucar.edu/surface/stations.txt";  // metar station names/locations
 $GML_URL = "https://www.aviationweather.gov/docs/metar/stations.txt";  // metar station names/locations
 
