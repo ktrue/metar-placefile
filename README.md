@@ -7,20 +7,22 @@ This script set gets METAR data from aviationweather.gov and formats a placefile
 to display icons for weather conditions/sky conditions, wind barbs for wind direction/speed, and
 mouse-over popups with text for the current METAR report from the station.
 
-Two scripts are to run via cron to gather the data routinely (*get-metar-metadata.php*, *get-aviation-metars.php*).  
+Two scripts are to run via cron to gather the data routinely (*get-aviation-metadata.php*, *get-aviation-metars.php*).  
+
+**Note:** the original *get-metar-metadata.php* script is **deprecated** and replaced by *get-aviation-metadata.php* as the data file for the original script is no longer available.
 
 The *metar-placefile.php* script is to be accessed by including the website URL in the GRLevelX placefile manager window.
 
 ## Scripts:
 
-### *get-metar-metadata.php*
+### *get-aviation-metadata.php*
 
-This script reads the **stations.txt** from aviationweather.gov and merges optional updates from
+This script reads the **stations.cache.xml.gz** file from aviationweatherr.gov and merges optional updates from
 **new_station_data.txt** (a comma delimited CSV file) to produce *metar-metadata-inc.php* which
 is used by the *get-aviation-metars.php* program for all the descriptive info about a METAR site.
 
 It should be run daily by cron .. the source file doesn't change very often.
-If the **stations.txt** file is not available, the cache file **metar-location-raw.txt** will be used instead
+If the **stations.cache.xml.gz** file is not available, the cache file **metar-location-raw.txt** will be used instead
 
 ### *get-aviation-metars.php*
 
@@ -30,7 +32,7 @@ data for each reporting METAR station.
 
 This program requires the following files:
 -  *metar-cond-iconcodes-inc.php* (for weather code to iconnumber lookup)
--  *metar-metadata-inc.php* (for details about the METAR ICAO produced by *get-metar-metadata.php*)
+-  *metar-metadata-inc.php* (for details about the METAR ICAO produced by *get-aviation-metadata.php*)
 
 It should be run by cron every 5 or 10 minutes to keep the data current.  Keep in mind that
 many METAR sites report only once per hour so loading more often won't result in 'new' data.
@@ -63,26 +65,26 @@ Additional documentation is in each script for further modification convenience.
 ## Installation
 
 Change the `date_default_timezone_set('America/Los_Angeles');` to your timezone in
-*metar-placefile.php*, and *get-metar-metadata.php*; 
+*metar-placefile.php*, and *get-aviation-metadata.php*; 
 and `$ourTZ = 'America/Los_Angeles';` in *get-aviation-metars.php*
 to your timezone if needed.
 
 Upload the following files in a directory under the document root of your website.  (We used 'placefiles' in the examples below)
 
-- *get-metar-metadata.php*
+- *get-aviation-metadata.php*
 - *get-aviation-metars.php*
 - *metar-placefile.php*
 - *metar-cond-iconcodes-inc.php*
 - *cloudcover_new.png*
 - *windbarbs_75_new.png*
   
-Set up cron to run *get-metar-metadata.php* like:
+Set up cron to run *get-aviation-metadata.php* like:
 ```
-1 1 * * * cd $HOME/public_html/placefiles;php -q get-metar-metadata.php > metadata-status.txt
+1 1 * * * cd $HOME/public_html/placefiles;php -q get-aviation-metadata.php > metadata-status.txt
 ```
 be sure to change the public_html/placefiles to the directory where you installed the scripts.
 
-Run the script once (to generate data) by `https://your.website.com/placefiles/get-metar-metadata.php`
+Run the script once (to generate data) by `https://your.website.com/placefiles/get-aviation-metadata.php`
 
 Set up cron to run *get-aviation-metars.php* like:
 
