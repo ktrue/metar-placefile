@@ -32,6 +32,7 @@ ini_set('display_errors','1');
 // Version 1.11 - 27-Nov-2023 - fix error with temp/dewpt at 0C/32F non-display
 // Version 1.12 - 28-Nov-2023 - fix issue with temp 0F(0C) display
 // Version 1.13 - 28-Nov-2023 - fix issue with temp 0F(0C) display w/PHP 7.4+
+// Version 1.14 - 21-Sep-2025 - fix for aviationweather.gov metars.cache.csv.gz format changes
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $ourTZ = 'America/Los_Angeles';
@@ -39,7 +40,7 @@ ini_set('display_errors','1');
 // -------------End Settings -----------------------------
 //
 
-$GMLversion = 'get-aviation-metars.php V1.13 - 28-Nov-2023 - saratoga-weather.org';
+$GMLversion = 'get-aviation-metars.php V1.14 - 21-Sep-2025 - saratoga-weather.org';
 $NOAA_URL = 'https://aviationweather.gov/data/cache/metars.cache.csv.gz'; // new location 15-June-2016
 //
 $NOAAcacheName = $cacheFileDir."aviationweather-current.csv";
@@ -145,12 +146,13 @@ if(strlen($rawHTML) < 2000 ){
 	
 foreach ($recs as $i => $rec) {
 	if(strlen($rec) < 100) {continue;}
-	if(substr($rec,0,1) == '"') {
+	#if(substr($rec,0,1) == '"') {
 		$vals = str_getcsv($rec); 
-		$Debug .= "<!-- rec $i has embedded commas for '".$vals[0]."'... reprocessing -->\n";
+		#$Debug .= "<!-- rec $i has embedded commas for '".$vals[0]."'... reprocessing -->\n";
 		$vals[0] = str_replace(',','',$vals[0]); # remove commas in raw metar.
+    $vals[0] = str_replace(array('METAR ','SPECI '),array('',''),$vals[0]);
 		$rec = join(',',$vals);
-	}
+	#}
 	if(substr($rec,0,8) == 'raw_text') {continue;}
 	$metar = substr($rec,0,4);
 	$tM = gen_data($metar,trim($rec));
