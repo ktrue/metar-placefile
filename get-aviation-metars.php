@@ -33,6 +33,8 @@ ini_set('display_errors','1');
 // Version 1.12 - 28-Nov-2023 - fix issue with temp 0F(0C) display
 // Version 1.13 - 28-Nov-2023 - fix issue with temp 0F(0C) display w/PHP 7.4+
 // Version 1.14 - 21-Sep-2025 - fix for aviationweather.gov metars.cache.csv.gz format changes
+// Version 1.15 - 03-Oct-2025 - prefer curl use IPV4 address
+// Version 1.16 - 24-Oct-2025 - fix missing codes 'CLR' when ' CLR ' is in raw METAR
 // -------------Settings ---------------------------------
   $cacheFileDir = './';      // default cache file directory
   $ourTZ = 'America/Los_Angeles';
@@ -40,14 +42,15 @@ ini_set('display_errors','1');
 // -------------End Settings -----------------------------
 //
 
-$GMLversion = 'get-aviation-metars.php V1.14 - 21-Sep-2025 - saratoga-weather.org';
+$GMLversion = 'get-aviation-metars.php V1.16 - 24-Oct-2025 - saratoga-weather.org';
 $NOAA_URL = 'https://aviationweather.gov/data/cache/metars.cache.csv.gz'; // new location 15-June-2016
 //
 $NOAAcacheName = $cacheFileDir."aviationweather-current.csv";
 $outputFile    = 'aviation-metars-data-inc.php';
 // ---------- end of settings -----------------------
 
-if (isset($_REQUEST['sce']) && strtolower($_REQUEST['sce']) == 'view' ) {
+if (isset($_REQUEST['sce']) && strtolower($_REQUEST['sce']) == 'view' 
+    and strlen($_REQUEST['sce']) == 4) {
    //--self downloader --
    $filenameReal = __FILE__;
    $download_size = filesize($filenameReal);
@@ -61,6 +64,11 @@ if (isset($_REQUEST['sce']) && strtolower($_REQUEST['sce']) == 'view' ) {
    
    readfile($filenameReal);
    exit;
+}
+if (isset($_REQUEST['sce'])) {
+  header("HTTP/1.1 403 Forbidden");
+  print "<h1>Hacking attempt. Denied.</h1>\n";
+  exit();
 }
 
 // --------- search for nearby metars ------------
@@ -399,6 +407,9 @@ offset	data	Convert	Key	sample
 	$M['dalthpa']       = round(convertPressure((float)$V[11],'in','hpa'),1);
 	$M['BAROMETER']     = $M['daltinhg']." inHg (".$M['dalthpa']." hPa)";
 	$M['codes']         = str_replace(' ',',',trim($V[21]));
+  if(empty($M['codes']) and strpos($M['RAW-METAR'],' CLR ') !== false) {
+    $M['codes'] = 'CLR';
+  }
 	$M['CONDITIONS']    =  decode_conditions($M['codes']);
 	$M['CLOUD-DETAILS'] = '';
 	$saveClouds = array();
@@ -574,6 +585,9 @@ function decode_conditions ($codes) {
     curl_setopt($ch, $needCookie[$domain]);                    // set the cookie for this request
     curl_setopt($ch, CURLOPT_COOKIESESSION, true);             // and ignore prior cookies
     $Debug .=  "<!-- cookie used '" . $needCookie[$domain] . "' for GET to $domain -->\n";
+  }
+  if (defined('CURLOPT_IPRESOLVE') && defined('CURL_IPRESOLVE_V4')){
+   curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
   }
 
   $data = curl_exec($ch);                                      // execute session
